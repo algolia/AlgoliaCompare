@@ -180,14 +180,13 @@ export function SearchPanel({
               />
             </div>
             <div>
-              <label className="text-sm font-medium">API Key</label>
+              <label className="text-sm font-medium">Search API Key</label>
               <Input
                 value={editPanel.apiKey}
                 onChange={(e) =>
                   setEditPanel({ ...editPanel, apiKey: e.target.value })
                 }
                 placeholder="Search-only API Key"
-                type="password"
               />
             </div>
             <div>
