@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editMapping, setEditMapping] = useState(cardMapping);
+  const [imageError, setImageError] = useState(false);
 
   const getValue = (key: string): string => {
     const value = hit[key];
@@ -29,6 +30,11 @@ export function ProductCard({
   const imageUrl = (cardMapping.imagePrefix || '') + getValue(cardMapping.image) + (cardMapping.imageSuffix || '');
   const title = getValue(cardMapping.title);
   const subtitle = getValue(cardMapping.subtitle);
+
+  useEffect(() => {
+    // Whenever imageUrl changes, reset error so we try loading again
+    setImageError(false);
+  }, [imageUrl]);
 
   const handleSave = () => {
     onMappingChange?.(editMapping);
@@ -118,14 +124,12 @@ export function ProductCard({
       ) : (
         <>
           <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-            {imageUrl ? (
+            {imageUrl && !imageError ? (
               <img
                 src={imageUrl}
                 alt={title}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                onError={() => setImageError(true)}
               />
             ) : (
               <span className="text-xs text-muted-foreground">No image</span>
