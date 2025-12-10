@@ -19,11 +19,16 @@ export function ProductCard({
   const [editMapping, setEditMapping] = useState(cardMapping);
   const [imageError, setImageError] = useState(false);
 
-  const getValue = (key: string): string => {
-    const value = hit[key];
+  const getValue = (path: string): string => {
+    // Resolve nested attribute: "sku._id" -> hit.sku._id
+    const raw = path
+      .split('.')
+      .reduce<any>((obj, key) => (obj != null ? obj[key] : undefined), hit);
+  
+    const value = Array.isArray(raw) ? raw[0] : raw;
+  
     if (typeof value === 'string') return value;
     if (typeof value === 'number') return String(value);
-    if (Array.isArray(value)) return value[0] || '';
     return '';
   };
 
