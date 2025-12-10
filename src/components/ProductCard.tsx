@@ -26,7 +26,7 @@ export function ProductCard({
     return '';
   };
 
-  const imageUrl = "https://media.ulta.com/i/ulta/" + getValue(cardMapping.image);
+  const imageUrl = (cardMapping.imagePrefix || '') + getValue(cardMapping.image) + (cardMapping.imageSuffix || '');
   const title = getValue(cardMapping.title);
   const subtitle = getValue(cardMapping.subtitle);
 
@@ -63,6 +63,28 @@ export function ProductCard({
               }
               className="h-7 text-xs"
               placeholder="e.g., image_url"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Image Prefix</label>
+            <Input
+              value={editMapping.imagePrefix}
+              onChange={(e) =>
+                setEditMapping({ ...editMapping, imagePrefix: e.target.value })
+              }
+              className="h-7 text-xs"
+              placeholder="e.g., https://..."
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Image Suffix</label>
+            <Input
+              value={editMapping.imageSuffix}
+              onChange={(e) =>
+                setEditMapping({ ...editMapping, imageSuffix: e.target.value })
+              }
+              className="h-7 text-xs"
+              placeholder="e.g., .png, .jpg..."
             />
           </div>
           <div>
