@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ interface SearchAreaProps {
   onPanelsChange: (panels: SearchPanelType[]) => void;
   externalQuery: string;
   onQueryChange: (query: string) => void;
+  onCurrentInputChange?: (input: string) => void;
+  queryToSetAndSubmit?: { query: string; trigger: number } | null;
 }
 
 export function SearchArea({
@@ -17,8 +19,11 @@ export function SearchArea({
   onPanelsChange,
   externalQuery,
   onQueryChange,
+  onCurrentInputChange,
+  queryToSetAndSubmit,
 }: SearchAreaProps) {
   const [localQuery, setLocalQuery] = useState(externalQuery);
+  const prevQueryToSetRef = useRef<number | null>(null);
 
   const handleAddPanel = () => {
     if (panels.length < 4) {
@@ -43,10 +48,21 @@ export function SearchArea({
     onQueryChange(localQuery);
   };
 
-  // Sync local query when external changes
-  if (externalQuery !== localQuery && externalQuery !== '') {
-    setLocalQuery(externalQuery);
-  }
+  // Expose current input value to parent for highlighting
+  useEffect(() => {
+    if (onCurrentInputChange) {
+      onCurrentInputChange(localQuery);
+    }
+  }, [localQuery, onCurrentInputChange]);
+
+  // Handle programmatic query set and submit (from QueriesList)
+  useEffect(() => {
+    if (queryToSetAndSubmit !== undefined && queryToSetAndSubmit !== null && queryToSetAndSubmit.trigger !== prevQueryToSetRef.current) {
+      prevQueryToSetRef.current = queryToSetAndSubmit.trigger;
+      setLocalQuery(queryToSetAndSubmit.query);
+      onQueryChange(queryToSetAndSubmit.query);
+    }
+  }, [queryToSetAndSubmit, onQueryChange]);
 
   return (
     <div className="flex flex-col h-full">

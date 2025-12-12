@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils';
 
 interface QueriesListProps {
   queries: string[];
-  activeQuery: string;
+  currentSearchInput: string;
   onQuerySelect: (query: string) => void;
   onQueriesChange: (queries: string[]) => void;
 }
 
 export function QueriesList({
   queries,
-  activeQuery,
+  currentSearchInput,
   onQuerySelect,
   onQueriesChange,
 }: QueriesListProps) {
@@ -60,8 +60,8 @@ export function QueriesList({
             key={index}
             className={cn(
               'group flex items-center gap-1 rounded-md transition-colors',
-              activeQuery === query
-                ? 'bg-primary text-primary-foreground'
+              currentSearchInput === query
+                ? 'bg-accent border border-primary/20'
                 : 'hover:bg-accent'
             )}
           >
@@ -94,7 +94,7 @@ export function QueriesList({
                 <div
                   className={cn(
                     'flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity',
-                    activeQuery === query && 'opacity-100'
+                    currentSearchInput === query && 'opacity-100'
                   )}
                 >
                   <Button
@@ -102,8 +102,8 @@ export function QueriesList({
                     size="icon"
                     className={cn(
                       'h-6 w-6',
-                      activeQuery === query
-                        ? 'hover:bg-primary-foreground/20'
+                      currentSearchInput === query
+                        ? 'hover:bg-accent-foreground/20'
                         : ''
                     )}
                     onClick={() => handleStartEdit(index)}
@@ -115,8 +115,8 @@ export function QueriesList({
                     size="icon"
                     className={cn(
                       'h-6 w-6',
-                      activeQuery === query
-                        ? 'hover:bg-primary-foreground/20'
+                      currentSearchInput === query
+                        ? 'hover:bg-accent-foreground/20'
                         : ''
                     )}
                     onClick={() => handleDelete(index)}

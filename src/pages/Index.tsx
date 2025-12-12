@@ -9,6 +9,8 @@ import { createDefaultPanel } from '@/types/config';
 const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeQuery, setActiveQuery] = useState('');
+  const [currentSearchInput, setCurrentSearchInput] = useState('');
+  const [queryToSetAndSubmit, setQueryToSetAndSubmit] = useState<{ query: string; trigger: number } | null>(null);
   
   const {
     configs,
@@ -37,7 +39,9 @@ const Index = () => {
   };
 
   const handleQuerySelect = (query: string) => {
-    setActiveQuery(query);
+    // Set the query to be submitted (one-way, not locked)
+    // Use a trigger counter to ensure each click is unique
+    setQueryToSetAndSubmit({ query, trigger: Date.now() });
   };
 
   return (
@@ -49,7 +53,7 @@ const Index = () => {
         <div className="w-48 shrink-0">
           <QueriesList
             queries={activeConfig?.queries || []}
-            activeQuery={activeQuery}
+            currentSearchInput={currentSearchInput}
             onQuerySelect={handleQuerySelect}
             onQueriesChange={handleQueriesChange}
           />
@@ -62,6 +66,8 @@ const Index = () => {
             onPanelsChange={handlePanelsChange}
             externalQuery={activeQuery}
             onQueryChange={setActiveQuery}
+            onCurrentInputChange={setCurrentSearchInput}
+            queryToSetAndSubmit={queryToSetAndSubmit}
           />
         </div>
       </div>
