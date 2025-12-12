@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Check, Copy, Upload } from 'lucide-react';
+import { Plus, Trash2, Check, Copy, Upload, HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { AppConfig } from '@/types/config';
 
 interface SettingsModalProps {
@@ -62,6 +68,29 @@ export function SettingsModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Extract and count characters after ?config=
+  const getConfigParamLength = (): number => {
+    try {
+      const url = new URL(shareableUrl);
+      const configParam = url.searchParams.get('config');
+      return configParam ? configParam.length : 0;
+    } catch {
+      // If shareableUrl is not a valid URL, try to extract manually
+      const match = shareableUrl.match(/[?&]config=([^&]*)/);
+      return match ? match[1].length : 0;
+    }
+  };
+
+  const configParamLength = getConfigParamLength();
+  const maxLength = 2000;
+
+  const getCountColor = (): string => {
+    if (configParamLength < 1500) return 'text-green-600';
+    if (configParamLength < 1800) return 'text-yellow-600';
+    if (configParamLength < maxLength) return 'text-orange-600';
+    return 'text-red-600';
+  };
+
   const handleJsonChange = (configId: string, json: string) => {
     try {
       const parsed = JSON.parse(json);
@@ -101,6 +130,21 @@ export function SettingsModal({
                   <Copy className="h-4 w-4" />
                 )}
               </Button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`text-xs font-medium ${getCountColor()}`}>
+                {configParamLength}/{maxLength}
+              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="start" sideOffset={6} className="max-w-xs">
+                    <p>Shareable URLs can't go beyond 2000 characters</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
