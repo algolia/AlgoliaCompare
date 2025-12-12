@@ -21,7 +21,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
           asChild
         >
           <a
-            href="https://github.com"
+            href="https://github.com/algolia/AlgoliaCompare"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="View on GitHub"
