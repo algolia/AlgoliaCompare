@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Check, Copy, Upload, HelpCircle } from 'lucide-react';
+import Editor from '@monaco-editor/react';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,10 @@ export function SettingsModal({
   const [importJson, setImportJson] = useState('');
   const [importError, setImportError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
+  const [importEditorHeight, setImportEditorHeight] = useState(100);
+  const resizeRefs = useRef<Record<string, { startY: number; startHeight: number }>>({});
+  const importResizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
   const handleImport = () => {
     const result = onImportConfig(importJson);
@@ -98,6 +103,54 @@ export function SettingsModal({
     } catch {
       // Invalid JSON, don't update
     }
+  };
+
+  const getEditorHeight = (configId: string): number => {
+    return editorHeights[configId] || 200;
+  };
+
+  const handleResizeStart = (configId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = getEditorHeight(configId);
+    resizeRefs.current[configId] = { startY, startHeight };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const newHeight = Math.max(100, Math.min(800, startHeight + deltaY));
+      setEditorHeights((prev) => ({ ...prev, [configId]: newHeight }));
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      delete resizeRefs.current[configId];
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleImportResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = importEditorHeight;
+    importResizeRef.current = { startY, startHeight };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const newHeight = Math.max(100, Math.min(800, startHeight + deltaY));
+      setImportEditorHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      importResizeRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   return (
@@ -200,13 +253,40 @@ export function SettingsModal({
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Textarea
-                        className="font-mono text-xs min-h-[200px]"
-                        value={JSON.stringify(config, null, 2)}
-                        onChange={(e) =>
-                          handleJsonChange(config.id, e.target.value)
-                        }
-                      />
+                      <div className="border border-border rounded-md overflow-hidden relative">
+                        <Editor
+                          height={`${getEditorHeight(config.id)}px`}
+                          defaultLanguage="json"
+                          value={JSON.stringify(config, null, 2)}
+                          onChange={(value) => {
+                            if (value !== undefined) {
+                              handleJsonChange(config.id, value);
+                            }
+                          }}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 12,
+                            lineNumbers: "on",
+                            scrollBeyondLastLine: false,
+                            wordWrap: "on",
+                            formatOnPaste: true,
+                            formatOnType: true,
+                            tabSize: 2,
+                            automaticLayout: true,
+                          }}
+                        />
+                        <div
+                          className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors group"
+                          onMouseDown={(e) => handleResizeStart(config.id, e)}
+                          style={{
+                            background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.1) 50%, transparent 60%, transparent 100%)',
+                          }}
+                        >
+                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+                            <div className="h-0.5 w-12 bg-border group-hover:bg-border/80 transition-colors rounded" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -219,15 +299,39 @@ export function SettingsModal({
             <label className="text-sm font-medium text-foreground">
               Import Configuration
             </label>
-            <Textarea
-              placeholder="Paste JSON configuration here..."
-              className="font-mono text-xs min-h-[100px]"
-              value={importJson}
-              onChange={(e) => {
-                setImportJson(e.target.value);
-                setImportError('');
-              }}
-            />
+            <div className="border border-border rounded-md overflow-hidden relative">
+              <Editor
+                height={`${importEditorHeight}px`}
+                defaultLanguage="json"
+                value={importJson}
+                onChange={(value) => {
+                  setImportJson(value || '');
+                  setImportError('');
+                }}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 12,
+                  lineNumbers: "on",
+                  scrollBeyondLastLine: false,
+                  wordWrap: "on",
+                  formatOnPaste: true,
+                  formatOnType: true,
+                  tabSize: 2,
+                  automaticLayout: true,
+                }}
+              />
+              <div
+                className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors group"
+                onMouseDown={handleImportResizeStart}
+                style={{
+                  background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.1) 50%, transparent 60%, transparent 100%)',
+                }}
+              >
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+                  <div className="h-0.5 w-12 bg-border group-hover:bg-border/80 transition-colors rounded" />
+                </div>
+              </div>
+            </div>
             {importError && (
               <p className="text-sm text-destructive">{importError}</p>
             )}
