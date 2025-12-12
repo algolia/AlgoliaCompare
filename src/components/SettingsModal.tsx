@@ -141,7 +141,7 @@ export function SettingsModal({
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="right" align="start" sideOffset={6} className="max-w-xs">
-                    <p>Shareable URLs can't go beyond 2000 characters</p>
+                    <p>Shareable URLs can't exceed 2000 characters</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
