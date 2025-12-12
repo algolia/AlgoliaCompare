@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
 import { Settings, X } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
+import { useTheme } from 'next-themes';
+//import Editor from '@monaco-editor/react';
+import SearchParamsEditor from './SearchParamsEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -72,6 +74,15 @@ export function SearchPanel({
 }: SearchPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editPanel, setEditPanel] = useState(panel);
+  const { resolvedTheme } = useTheme();
+  
+  // Fallback to check document class if theme is not available
+  const editorTheme = useMemo(() => {
+    if (resolvedTheme === 'dark') return 'vs-dark';
+    if (resolvedTheme === 'light') return 'vs-light';
+    // Fallback: check document class
+    return document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light';
+  }, [resolvedTheme]);
 
   const searchClient = useMemo(() => {
     if (!panel.appId || !panel.apiKey) return null;
@@ -200,22 +211,40 @@ export function SearchPanel({
               />
             </div>
             <div>
-              <label className="text-sm font-medium">
+              <label className="text-sm font-medium mb-2 block">
                 Query Parameters (JSON)
               </label>
-              <Textarea
-                value={JSON.stringify(editPanel.queryParams, null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value);
-                    setEditPanel({ ...editPanel, queryParams: parsed });
-                  } catch {
-                    // Invalid JSON
-                  }
-                }}
-                className="font-mono text-xs min-h-[80px]"
-                placeholder='{ "hitsPerPage": 10 }'
-              />
+              {/* <div className="border border-border rounded-md overflow-hidden">
+                <Editor
+                  height="200px"
+                  defaultLanguage="json"
+                  value={JSON.stringify(editPanel.queryParams, null, 2)}
+                  onChange={(value) => {
+                    if (value !== undefined) {
+                      try {
+                        const parsed = JSON.parse(value);
+                        setEditPanel({ ...editPanel, queryParams: parsed });
+                      } catch {
+                        // Invalid JSON - keep the text but don't update queryParams
+                      }
+                    }
+                  }}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    formatOnPaste: true,
+                    formatOnType: true,
+                    tabSize: 2,
+                    automaticLayout: true,
+                  }}
+                  theme={editorTheme}
+                />
+              </div> */}
+
+            <SearchParamsEditor editPanel={editPanel} setEditPanel={setEditPanel} editorTheme={editorTheme} /> 
             </div>
             <Button onClick={handleSaveSettings} className="w-full">
               Save Settings
@@ -226,3 +255,4 @@ export function SearchPanel({
     </div>
   );
 }
+
