@@ -53,7 +53,7 @@ export function SettingsModal({
   const [importError, setImportError] = useState('');
   const [copied, setCopied] = useState(false);
   const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
-  const [importEditorHeight, setImportEditorHeight] = useState(100);
+  const [importEditorHeight, setImportEditorHeight] = useState(250);
   const resizeRefs = useRef<Record<string, { startY: number; startHeight: number }>>({});
   const importResizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
@@ -155,30 +155,33 @@ export function SettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Configuration Settings</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="text-xl font-semibold">Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4">
           {/* Share URL */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Shareable URL
-            </label>
+          <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-foreground">
+                Shareable URL
+              </label>
+            </div>
             <div className="flex gap-2">
               <Input
                 value={shareableUrl}
                 readOnly
-                className="flex-1 text-xs"
+                className="flex-1 text-xs font-mono bg-background"
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleCopyUrl}
+                className="shrink-0"
               >
                 {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}
@@ -202,58 +205,69 @@ export function SettingsModal({
           </div>
 
           {/* Configurations */}
-          <div className="space-y-2">
+          <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-sm font-semibold text-foreground">
                 Configurations
               </label>
-              <Button variant="outline" size="sm" onClick={onAddConfig}>
-                <Plus className="h-4 w-4 mr-1" />
-                Add
+              <Button variant="outline" size="sm" onClick={onAddConfig} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Add Configuration
               </Button>
             </div>
 
             <Accordion type="single" collapsible className="w-full">
               {configs.map((config) => (
-                <AccordionItem key={config.id} value={config.id}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
+                <AccordionItem 
+                  key={config.id} 
+                  value={config.id}
+                  className="border rounded-lg px-3 mb-2 bg-background/50"
+                >
+                  <AccordionTrigger className="hover:no-underline py-3">
+                    <div className="flex items-center gap-2 flex-1">
                       <span
                         className={
                           config.id === activeConfigId
                             ? 'font-semibold text-primary'
-                            : ''
+                            : 'font-medium'
                         }
                       >
                         {config.name}
                       </span>
                       {config.id === activeConfigId && (
-                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                           Active
                         </span>
                       )}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pt-2">
+                  <AccordionContent className="pt-4 pb-3">
+                    <div className="space-y-3">
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => onSelectConfig(config.id)}
                           disabled={config.id === activeConfigId}
+                          className="flex-1"
                         >
                           Set Active
                         </Button>
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => onDeleteConfig(config.id)}
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete "${config.name}"? This action cannot be undone.`)) {
+                              onDeleteConfig(config.id);
+                            }
+                          }}
+                          className="gap-1.5"
                         >
                           <Trash2 className="h-4 w-4" />
+                          Delete
                         </Button>
                       </div>
-                      <div className="border border-border rounded-md overflow-hidden relative">
+                      <div className="border border-border rounded-md overflow-hidden relative bg-background">
                         <Editor
                           height={`${getEditorHeight(config.id)}px`}
                           defaultLanguage="json"
@@ -295,56 +309,70 @@ export function SettingsModal({
           </div>
 
           {/* Import */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Import Configuration
-            </label>
-            <div className="border border-border rounded-md overflow-hidden relative">
-              <Editor
-                height={`${importEditorHeight}px`}
-                defaultLanguage="json"
-                value={importJson}
-                onChange={(value) => {
-                  setImportJson(value || '');
-                  setImportError('');
-                }}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 12,
-                  lineNumbers: "on",
-                  scrollBeyondLastLine: false,
-                  wordWrap: "on",
-                  formatOnPaste: true,
-                  formatOnType: true,
-                  tabSize: 2,
-                  automaticLayout: true,
-                }}
-              />
-              <div
-                className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors group"
-                onMouseDown={handleImportResizeStart}
-                style={{
-                  background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.1) 50%, transparent 60%, transparent 100%)',
-                }}
-              >
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-                  <div className="h-0.5 w-12 bg-border group-hover:bg-border/80 transition-colors rounded" />
-                </div>
-              </div>
-            </div>
-            {importError && (
-              <p className="text-sm text-destructive">{importError}</p>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleImport}
-              disabled={!importJson}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem 
+              value="import"
+              className="border rounded-lg px-3 bg-background/50"
             >
-              <Upload className="h-4 w-4 mr-1" />
-              Import
-            </Button>
-          </div>
+              <AccordionTrigger className="hover:no-underline py-3">
+                <label className="text-sm font-semibold text-foreground">
+                  Import Configuration
+                </label>
+              </AccordionTrigger>
+              <AccordionContent className="pt-4 pb-3">
+                <div className="space-y-3">
+                  <div className="border border-border rounded-md overflow-hidden relative bg-background">
+                    <Editor
+                      height={`${importEditorHeight}px`}
+                      defaultLanguage="json"
+                      value={importJson}
+                      onChange={(value) => {
+                        setImportJson(value || '');
+                        setImportError('');
+                      }}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        lineNumbers: "on",
+                        scrollBeyondLastLine: false,
+                        wordWrap: "on",
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        tabSize: 2,
+                        automaticLayout: true,
+                      }}
+                    />
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors group"
+                      onMouseDown={handleImportResizeStart}
+                      style={{
+                        background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.1) 50%, transparent 60%, transparent 100%)',
+                      }}
+                    >
+                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+                        <div className="h-0.5 w-12 bg-border group-hover:bg-border/80 transition-colors rounded" />
+                      </div>
+                    </div>
+                  </div>
+                  {importError && (
+                    <p className="text-sm text-destructive font-medium bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
+                      {importError}
+                    </p>
+                  )}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleImport}
+                    disabled={!importJson}
+                    className="w-full gap-1.5"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import Configuration
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </DialogContent>
     </Dialog>
