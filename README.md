@@ -10,7 +10,7 @@ Try it!
 
 📦 Simple Sharing via url
 
-👷 Edit result/product cards inline.
+👷 Edit result/product cards inline
 
 
 ## Contributing
