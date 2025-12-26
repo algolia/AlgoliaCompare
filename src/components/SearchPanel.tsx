@@ -3,7 +3,6 @@ import { InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
 import { Settings, X } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { useTheme } from 'next-themes';
-//import Editor from '@monaco-editor/react';
 import SearchParamsEditor from './SearchParamsEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +23,11 @@ interface SearchPanelProps {
   canRemove: boolean;
 }
 
+
 function HitsGrid({
-  cardMapping,
-  onMappingChange,
+  cardMapping
 }: {
   cardMapping: CardMapping;
-  onMappingChange: (mapping: CardMapping) => void;
 }) {
   const { hits } = useHits();
 
@@ -48,7 +46,6 @@ function HitsGrid({
           key={hit.objectID}
           hit={hit as Record<string, unknown>}
           cardMapping={cardMapping}
-          onMappingChange={onMappingChange}
         />
       ))}
     </div>
@@ -75,7 +72,7 @@ export function SearchPanel({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editPanel, setEditPanel] = useState(panel);
   const { resolvedTheme } = useTheme();
-  
+
   // Fallback to check document class if theme is not available
   const editorTheme = useMemo(() => {
     if (resolvedTheme === 'dark') return 'vs-dark';
@@ -92,10 +89,6 @@ export function SearchPanel({
   const handleSaveSettings = () => {
     onPanelChange(editPanel);
     setSettingsOpen(false);
-  };
-
-  const handleMappingChange = (mapping: CardMapping) => {
-    onPanelChange({ ...panel, cardMapping: mapping });
   };
 
   const isConfigured = panel.appId && panel.apiKey && panel.indexName;
@@ -158,7 +151,7 @@ export function SearchPanel({
             <SearchInput externalQuery={query} />
             <HitsGrid
               cardMapping={panel.cardMapping}
-              onMappingChange={handleMappingChange}
+            //onMappingChange={handleMappingChange}
             />
           </InstantSearch>
         ) : null}
@@ -211,40 +204,76 @@ export function SearchPanel({
               />
             </div>
             <div>
+              <label className="text-sm font-medium block">
+                Card Display
+              </label>
+
+
+              <div className="pb-3 px-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Image field</label>
+                  <Input
+                    value={editPanel.cardMapping.image}
+                    onChange={(e) =>
+                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, image: e.target.value } })
+                    }
+                    className="h-7 text-xs"
+                    placeholder="e.g., image_url"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Image Prefix</label>
+                  <Input
+                    value={editPanel.cardMapping.imagePrefix}
+                    onChange={(e) =>
+                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imagePrefix: e.target.value } })
+                    }
+                    className="h-7 text-xs"
+                    placeholder="e.g., https://..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Image Suffix</label>
+                  <Input
+                    value={editPanel.cardMapping.imageSuffix}
+                    onChange={(e) =>
+                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imageSuffix: e.target.value } })
+                    }
+                    className="h-7 text-xs"
+                    placeholder="e.g., .png, .jpg..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Title field</label>
+                  <Input
+                    value={editPanel.cardMapping.title ?? ''}
+                    onChange={(e) =>
+                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, title: e.target.value } })
+                    }
+                    className="h-7 text-xs"
+                    placeholder="e.g., name"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Subtitle field
+                  </label>
+                  <Input
+                    value={editPanel.cardMapping.subtitle ?? ''}
+                    onChange={(e) =>
+                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, subtitle: e.target.value } })
+                    }
+                    className="h-7 text-xs"
+                    placeholder="e.g., brand"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
               <label className="text-sm font-medium mb-2 block">
                 Query Parameters (JSON)
               </label>
-              {/* <div className="border border-border rounded-md overflow-hidden">
-                <Editor
-                  height="200px"
-                  defaultLanguage="json"
-                  value={JSON.stringify(editPanel.queryParams, null, 2)}
-                  onChange={(value) => {
-                    if (value !== undefined) {
-                      try {
-                        const parsed = JSON.parse(value);
-                        setEditPanel({ ...editPanel, queryParams: parsed });
-                      } catch {
-                        // Invalid JSON - keep the text but don't update queryParams
-                      }
-                    }
-                  }}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 12,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
-                    wordWrap: 'on',
-                    formatOnPaste: true,
-                    formatOnType: true,
-                    tabSize: 2,
-                    automaticLayout: true,
-                  }}
-                  theme={editorTheme}
-                />
-              </div> */}
-
-            <SearchParamsEditor editPanel={editPanel} setEditPanel={setEditPanel} editorTheme={editorTheme} /> 
+              <SearchParamsEditor editPanel={editPanel} setEditPanel={setEditPanel} editorTheme={editorTheme} />
             </div>
             <Button onClick={handleSaveSettings} className="w-full">
               Save Settings
