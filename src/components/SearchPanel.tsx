@@ -94,7 +94,7 @@ export function SearchPanel({
   const isConfigured = panel.appId && panel.apiKey && panel.indexName;
 
   return (
-    <div className="flex flex-col h-full border border-border rounded-lg overflow-hidden bg-card">
+    <div className="flex flex-col h-full border-r overflow-hidden bg-card">
       <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
         <span className="text-sm font-medium text-foreground truncate">
           {panel.name}
