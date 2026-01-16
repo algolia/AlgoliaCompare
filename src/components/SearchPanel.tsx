@@ -134,7 +134,7 @@ export function SearchPanel({
         </div>
       </div>
 
-      <div className="flex-1 p-3 px-20">
+      <div className="flex-1 p-3 px-[10%]">
         {!isConfigured ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <p className="text-sm text-muted-foreground mb-2">
