@@ -40,8 +40,17 @@ function HitsGrid({
     );
   }
 
+  const cols = cardMapping.columns ?? 4;
+
+  const colsClass =
+    cols === 2 ? "grid-cols-2" :
+    cols === 3 ? "grid-cols-3" :
+    "grid-cols-4";
+
+
   return (
-    <div className={`grid grid-cols-${cardMapping.columns || 4} gap-3`}>
+    <div className={`grid ${colsClass} gap-3`}>
+
       {hits.map((hit) => (
         <ProductCard
           key={hit.objectID}
