@@ -35,6 +35,23 @@ export const DEFAULT_CARD_MAPPING: CardMapping = {
 
 export const DEFAULT_PANEL: Omit<SearchPanel, 'id'> = {
   name: 'Panel',
+  appId: '',
+  apiKey: '',
+  indexName: '',
+  queryParams: {},
+  cardMapping: { ...DEFAULT_CARD_MAPPING },
+};
+export const DEFAULT_PANEL_1: Omit<SearchPanel, 'id'> = {
+  name: 'Without NeuralSearch',
+  appId: 'Q6N17K5UHW',
+  apiKey: 'e0ca15aae3bc4bbb2746bbabd890a4aa',
+  indexName: 'ecommerce_ns_prod',
+  queryParams: {"disableNeuralSearch":true},
+  cardMapping: { ...DEFAULT_CARD_MAPPING },
+};
+
+export const DEFAULT_PANEL_2: Omit<SearchPanel, 'id'> = {
+  name: 'With NeuralSearch',
   appId: 'Q6N17K5UHW',
   apiKey: 'e0ca15aae3bc4bbb2746bbabd890a4aa',
   indexName: 'ecommerce_ns_prod',
@@ -44,7 +61,7 @@ export const DEFAULT_PANEL: Omit<SearchPanel, 'id'> = {
 
 export const DEFAULT_CONFIG: Omit<AppConfig, 'id'> = {
   name: 'Default Config',
-  queries: ['shoes', 'running shoes', 'nike'],
+  queries: ['healthy snacks for work', 'small table for next to couch', 'storage for tiny apartment', "pants that stretch but look professional mens"],
   panels: [],
 };
 
@@ -64,6 +81,6 @@ export function createDefaultConfig(): AppConfig {
   return {
     ...DEFAULT_CONFIG,
     id: generateId(),
-    panels: [createDefaultPanel(), createDefaultPanel()],
+    panels: [{id:generateId(), ...DEFAULT_PANEL_1}, {id:generateId(), ...DEFAULT_PANEL_2}],
   };
 }
