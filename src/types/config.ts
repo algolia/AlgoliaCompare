@@ -4,6 +4,7 @@ export interface CardMapping {
   imageSuffix: string;
   title: string;
   subtitle: string;
+  columns: number;
 }
 
 export interface SearchPanel {
@@ -25,18 +26,19 @@ export interface AppConfig {
 
 export const DEFAULT_CARD_MAPPING: CardMapping = {
   image: 'image',
-  imagePrefix: 'imagePrefix',
-  imageSuffix: 'imageSuffix',
+  imagePrefix: 'https://fxqklbpngldowtbkqezm.supabase.co/storage/v1/object/public/product-images/',
+  imageSuffix: '',
   title: 'name',
   subtitle: 'brand',
+  columns: 4
 };
 
 export const DEFAULT_PANEL: Omit<SearchPanel, 'id'> = {
   name: 'Panel',
-  appId: '',
-  apiKey: '',
-  indexName: '',
-  queryParams: { hitsPerPage: 10 },
+  appId: 'Q6N17K5UHW',
+  apiKey: 'e0ca15aae3bc4bbb2746bbabd890a4aa',
+  indexName: 'ecommerce_ns_prod',
+  queryParams: {},
   cardMapping: { ...DEFAULT_CARD_MAPPING },
 };
 

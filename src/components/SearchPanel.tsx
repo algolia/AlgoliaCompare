@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
+import { Configure, InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
 import { Settings, X } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { useTheme } from 'next-themes';
 import SearchParamsEditor from './SearchParamsEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,7 @@ function HitsGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={`grid grid-cols-${cardMapping.columns || 4} gap-3`}>
       {hits.map((hit) => (
         <ProductCard
           key={hit.objectID}
@@ -124,7 +125,7 @@ export function SearchPanel({
         </div>
       </div>
 
-      <div className="flex-1 p-3">
+      <div className="flex-1 p-3 px-20">
         {!isConfigured ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <p className="text-sm text-muted-foreground mb-2">
@@ -148,10 +149,10 @@ export function SearchPanel({
             indexName={panel.indexName}
             future={{ preserveSharedStateOnUnmount: true }}
           >
+            <Configure {...panel.queryParams}></Configure>
             <SearchInput externalQuery={query} />
             <HitsGrid
               cardMapping={panel.cardMapping}
-            //onMappingChange={handleMappingChange}
             />
           </InstantSearch>
         ) : null}
@@ -267,6 +268,32 @@ export function SearchPanel({
                     placeholder="e.g., brand"
                   />
                 </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">
+                    Columns
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-4">
+                      {editPanel.cardMapping.columns || 4}
+                    </span>
+                    <Slider
+                      value={[editPanel.cardMapping.columns || 4]}
+                      onValueChange={(value) =>
+                        setEditPanel({ 
+                          ...editPanel, 
+                          cardMapping: { 
+                            ...editPanel.cardMapping, 
+                            columns: value[0] 
+                          } 
+                        })
+                      }
+                      min={2}
+                      max={4}
+                      step={1}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <div>
@@ -284,4 +311,3 @@ export function SearchPanel({
     </div>
   );
 }
-
