@@ -36,12 +36,13 @@ export function ProductCard({
 
   return (
     <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-          <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+          {/* <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden"> */}
+          <div className="aspect-square flex items-center justify-center overflow-hidden">
             {imageUrl && !imageError ? (
               <img
                 src={imageUrl}
                 alt={title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 onError={() => setImageError(true)}
               />
             ) : (

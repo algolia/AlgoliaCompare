@@ -4,6 +4,7 @@ export interface CardMapping {
   imageSuffix: string;
   title: string;
   subtitle: string;
+  columns: number;
 }
 
 export interface SearchPanel {
@@ -25,10 +26,11 @@ export interface AppConfig {
 
 export const DEFAULT_CARD_MAPPING: CardMapping = {
   image: 'image',
-  imagePrefix: 'imagePrefix',
-  imageSuffix: 'imageSuffix',
+  imagePrefix: 'https://fxqklbpngldowtbkqezm.supabase.co/storage/v1/object/public/product-images/',
+  imageSuffix: '',
   title: 'name',
   subtitle: 'brand',
+  columns: 4
 };
 
 export const DEFAULT_PANEL: Omit<SearchPanel, 'id'> = {
@@ -36,13 +38,30 @@ export const DEFAULT_PANEL: Omit<SearchPanel, 'id'> = {
   appId: '',
   apiKey: '',
   indexName: '',
-  queryParams: { hitsPerPage: 10 },
+  queryParams: {},
+  cardMapping: { ...DEFAULT_CARD_MAPPING },
+};
+export const DEFAULT_PANEL_1: Omit<SearchPanel, 'id'> = {
+  name: 'Without NeuralSearch',
+  appId: 'Q6N17K5UHW',
+  apiKey: 'e0ca15aae3bc4bbb2746bbabd890a4aa',
+  indexName: 'ecommerce_ns_prod',
+  queryParams: {"disableNeuralSearch":true},
+  cardMapping: { ...DEFAULT_CARD_MAPPING },
+};
+
+export const DEFAULT_PANEL_2: Omit<SearchPanel, 'id'> = {
+  name: 'With NeuralSearch',
+  appId: 'Q6N17K5UHW',
+  apiKey: 'e0ca15aae3bc4bbb2746bbabd890a4aa',
+  indexName: 'ecommerce_ns_prod',
+  queryParams: {},
   cardMapping: { ...DEFAULT_CARD_MAPPING },
 };
 
 export const DEFAULT_CONFIG: Omit<AppConfig, 'id'> = {
   name: 'Default Config',
-  queries: ['shoes', 'running shoes', 'nike'],
+  queries: ['healthy snacks for work', 'small table for next to couch', 'storage for tiny apartment', "pants that stretch but look professional mens"],
   panels: [],
 };
 
@@ -62,6 +81,6 @@ export function createDefaultConfig(): AppConfig {
   return {
     ...DEFAULT_CONFIG,
     id: generateId(),
-    panels: [createDefaultPanel(), createDefaultPanel()],
+    panels: [{id:generateId(), ...DEFAULT_PANEL_1}, {id:generateId(), ...DEFAULT_PANEL_2}],
   };
 }
