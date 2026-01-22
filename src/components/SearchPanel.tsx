@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Configure, InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
-import { Settings, X } from 'lucide-react';
+import { Settings, X, Copy } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { useTheme } from 'next-themes';
 import SearchParamsEditor from './SearchParamsEditor';
@@ -13,11 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ProductCard } from './ProductCard';
 import { SearchPanel as SearchPanelType, CardMapping } from '@/types/config';
 
 interface SearchPanelProps {
   panel: SearchPanelType;
+  allPanels: SearchPanelType[];
   query: string;
   onPanelChange: (panel: SearchPanelType) => void;
   onRemove?: () => void;
@@ -74,6 +82,7 @@ function SearchInput({ externalQuery }: { externalQuery: string }) {
 
 export function SearchPanel({
   panel,
+  allPanels,
   query,
   onPanelChange,
   onRemove,
@@ -81,6 +90,7 @@ export function SearchPanel({
 }: SearchPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editPanel, setEditPanel] = useState(panel);
+  const [selectedCopyFromId, setSelectedCopyFromId] = useState<string>('');
   const { resolvedTheme } = useTheme();
 
   // Fallback to check document class if theme is not available
@@ -99,6 +109,31 @@ export function SearchPanel({
   const handleSaveSettings = () => {
     onPanelChange(editPanel);
     setSettingsOpen(false);
+  };
+
+  const getOtherPanels = () => {
+    return allPanels.filter(p => p.id !== panel.id);
+  };
+
+  const handleCopySettings = (sourcePanelId: string) => {
+    const sourcePanel = allPanels.find(p => p.id === sourcePanelId);
+    if (!sourcePanel) return;
+
+    const confirmed = window.confirm(
+      `Copy all settings from "${sourcePanel.name}"? This will overwrite your current panel configuration (except the panel name).`
+    );
+
+    if (confirmed) {
+      setEditPanel({
+        ...editPanel,
+        appId: sourcePanel.appId,
+        apiKey: sourcePanel.apiKey,
+        indexName: sourcePanel.indexName,
+        queryParams: { ...sourcePanel.queryParams },
+        cardMapping: { ...sourcePanel.cardMapping },
+      });
+      setSelectedCopyFromId('');
+    }
   };
 
   const isConfigured = panel.appId && panel.apiKey && panel.indexName;
@@ -173,6 +208,62 @@ export function SearchPanel({
             <DialogTitle>Panel Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {getOtherPanels().length > 0 && (
+              <div className="border border-border rounded-md p-3 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">
+                  Copy Settings from Another Panel
+                </label>
+
+                {getOtherPanels().length === 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopySettings(getOtherPanels()[0].id)}
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy from "{getOtherPanels()[0].name}"
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Select
+                      value={selectedCopyFromId}
+                      onValueChange={setSelectedCopyFromId}
+                    >
+                      <SelectTrigger className="flex-1 h-9">
+                        <SelectValue placeholder="Select a panel..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getOtherPanels().map(p => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedCopyFromId) {
+                          handleCopySettings(selectedCopyFromId);
+                        }
+                      }}
+                      disabled={!selectedCopyFromId}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  This will copy all settings except the panel name
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium">Panel Name</label>
               <Input
