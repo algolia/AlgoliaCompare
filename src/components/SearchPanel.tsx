@@ -61,15 +61,36 @@ export function SearchPanel({
 
   return (
     <div className="flex flex-col h-full border-r bg-card">
-      <SearchPanelHeader
-        panelName={panel.name}
-        canRemove={canRemove}
-        onSettingsClick={() => setSettingsOpen(true)}
-        onRemoveClick={onRemove}
-      />
+      {!isConfigured || !searchClient ? (
+        <SearchPanelHeader
+          panelName={panel.name}
+          canRemove={canRemove}
+          onSettingsClick={() => setSettingsOpen(true)}
+          onRemoveClick={onRemove}
+        />
+      ) : (
+        <InstantSearch
+          searchClient={searchClient}
+          indexName={panel.indexName}
+          future={{ preserveSharedStateOnUnmount: true }}
+        >
+          <Configure {...panel.queryParams}></Configure>
+          <SearchPanelHeader
+            panelName={panel.name}
+            canRemove={canRemove}
+            onSettingsClick={() => setSettingsOpen(true)}
+            onRemoveClick={onRemove}
+            showStats={true}
+          />
+          <div className="flex-1 p-3 px-[10%]">
+            <SearchInput externalQuery={query} />
+            <SearchPanelHitsGrid cardMapping={panel.cardMapping} />
+          </div>
+        </InstantSearch>
+      )}
 
-      <div className="flex-1 p-3 px-[10%]">
-        {!isConfigured ? (
+      {!isConfigured && (
+        <div className="flex-1 p-3 px-[10%]">
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <p className="text-sm text-muted-foreground mb-2">
               Configure Algolia connection
@@ -83,18 +104,8 @@ export function SearchPanel({
               Settings
             </Button>
           </div>
-        ) : searchClient ? (
-          <InstantSearch
-            searchClient={searchClient}
-            indexName={panel.indexName}
-            future={{ preserveSharedStateOnUnmount: true }}
-          >
-            <Configure {...panel.queryParams}></Configure>
-            <SearchInput externalQuery={query} />
-            <SearchPanelHitsGrid cardMapping={panel.cardMapping} />
-          </InstantSearch>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       <SearchPanelSettings
         open={settingsOpen}
