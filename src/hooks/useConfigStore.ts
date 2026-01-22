@@ -1,51 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppConfig, createDefaultConfig, generateId } from '@/types/config';
-import pako from 'pako';
-
-const STORAGE_KEY = 'algolia-compare-configs';
-const ACTIVE_CONFIG_KEY = 'algolia-compare-active';
-
-function encodeConfig(config: AppConfig): string {
-  const jsonStr = JSON.stringify(config);
-  const compressed = pako.deflate(jsonStr);
-  const base64 = btoa(String.fromCharCode(...compressed));
-  // URL-safe base64
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function decodeConfig(encoded: string): AppConfig | null {
-  try {
-    // Restore standard base64
-    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const decompressed = pako.inflate(bytes, { to: 'string' });
-    return JSON.parse(decompressed);
-  } catch {
-    return null;
-  }
-}
-
-function loadConfigsFromStorage(): AppConfig[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    console.error('Failed to load configs from storage');
-  }
-  return [createDefaultConfig()];
-}
-
-function loadActiveIdFromStorage(): string | null {
-  return localStorage.getItem(ACTIVE_CONFIG_KEY);
-}
+import { encodeConfig, decodeConfig } from '@/utils/configEncoding';
+import {
+  loadConfigsFromStorage,
+  loadActiveIdFromStorage,
+  saveConfigsToStorage,
+  saveActiveIdToStorage,
+} from '@/utils/configPersistence';
+import { generateShareableUrl } from '@/utils/shareableUrl';
 
 export function useConfigStore() {
   const [configs, setConfigs] = useState<AppConfig[]>(() => loadConfigsFromStorage());
@@ -87,13 +49,13 @@ export function useConfigStore() {
 
   // Save configs to localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
+    saveConfigsToStorage(configs);
   }, [configs]);
 
   // Save active config ID to localStorage
   useEffect(() => {
     if (activeConfigId) {
-      localStorage.setItem(ACTIVE_CONFIG_KEY, activeConfigId);
+      saveActiveIdToStorage(activeConfigId);
     }
   }, [activeConfigId]);
 
@@ -163,10 +125,7 @@ export function useConfigStore() {
 
   const getShareableUrl = useCallback(() => {
     if (activeConfig) {
-      const encoded = encodeConfig(activeConfig);
-      const url = new URL(window.location.href);
-      url.searchParams.set('config', encoded);
-      return url.toString();
+      return generateShareableUrl(activeConfig);
     }
     return window.location.href;
   }, [activeConfig]);

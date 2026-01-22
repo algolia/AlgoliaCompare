@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Plus, Trash2, Check, Copy, Upload, HelpCircle } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import {
@@ -14,7 +14,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,
@@ -23,6 +22,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { AppConfig } from '@/types/config';
+import { useResizableEditor } from '@/hooks/useResizableEditor';
+import { copyUrlToClipboard, getConfigParamLength } from '@/utils/shareableUrl';
 
 interface SettingsModalProps {
   open: boolean;
@@ -53,9 +54,10 @@ export function SettingsModal({
   const [importError, setImportError] = useState('');
   const [copied, setCopied] = useState(false);
   const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
-  const [importEditorHeight, setImportEditorHeight] = useState(250);
   const resizeRefs = useRef<Record<string, { startY: number; startHeight: number }>>({});
-  const importResizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  // Use custom hook for import editor resize
+  const importEditor = useResizableEditor(250);
 
   const handleImport = () => {
     const result = onImportConfig(importJson);
@@ -68,25 +70,12 @@ export function SettingsModal({
   };
 
   const handleCopyUrl = async () => {
-    await navigator.clipboard.writeText(shareableUrl);
+    await copyUrlToClipboard(shareableUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Extract and count characters after ?config=
-  const getConfigParamLength = (): number => {
-    try {
-      const url = new URL(shareableUrl);
-      const configParam = url.searchParams.get('config');
-      return configParam ? configParam.length : 0;
-    } catch {
-      // If shareableUrl is not a valid URL, try to extract manually
-      const match = shareableUrl.match(/[?&]config=([^&]*)/);
-      return match ? match[1].length : 0;
-    }
-  };
-
-  const configParamLength = getConfigParamLength();
+  const configParamLength = getConfigParamLength(shareableUrl);
   const maxLength = 2000;
 
   const getCountColor = (): string => {
@@ -131,27 +120,6 @@ export function SettingsModal({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleImportResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const startHeight = importEditorHeight;
-    importResizeRef.current = { startY, startHeight };
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      const newHeight = Math.max(100, Math.min(800, startHeight + deltaY));
-      setImportEditorHeight(newHeight);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      importResizeRef.current = null;
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -323,7 +291,7 @@ export function SettingsModal({
                 <div className="space-y-3">
                   <div className="border border-border rounded-md overflow-hidden relative bg-background">
                     <Editor
-                      height={`${importEditorHeight}px`}
+                      height={`${importEditor.height}px`}
                       defaultLanguage="json"
                       value={importJson}
                       onChange={(value) => {
@@ -344,7 +312,7 @@ export function SettingsModal({
                     />
                     <div
                       className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors group"
-                      onMouseDown={handleImportResizeStart}
+                      onMouseDown={importEditor.handleMouseDown}
                       style={{
                         background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.1) 50%, transparent 60%, transparent 100%)',
                       }}
