@@ -1,27 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Configure, InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
-import { Settings, X, Copy } from 'lucide-react';
+import { Configure, InstantSearch } from 'react-instantsearch';
+import { Settings } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { useTheme } from 'next-themes';
-import SearchParamsEditor from './SearchParamsEditor';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ProductCard } from './ProductCard';
-import { SearchPanel as SearchPanelType, CardMapping } from '@/types/config';
+import { SearchPanel as SearchPanelType } from '@/types/config';
+import { SearchPanelHeader } from './SearchPanel/SearchPanelHeader';
+import { SearchPanelSettings } from './SearchPanel/SearchPanelSettings';
+import { SearchPanelHitsGrid } from './SearchPanel/SearchPanelHitsGrid';
+import { SearchInput } from './SearchPanel/SearchInput';
 
 interface SearchPanelProps {
   panel: SearchPanelType;
@@ -30,54 +17,6 @@ interface SearchPanelProps {
   onPanelChange: (panel: SearchPanelType) => void;
   onRemove?: () => void;
   canRemove: boolean;
-}
-
-
-function HitsGrid({
-  cardMapping
-}: {
-  cardMapping: CardMapping;
-}) {
-  const { hits } = useHits();
-
-  if (hits.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-        No results
-      </div>
-    );
-  }
-
-  const cols = cardMapping.columns ?? 4;
-
-  const colsClass =
-    cols === 2 ? "grid-cols-2" :
-    cols === 3 ? "grid-cols-3" :
-    "grid-cols-4";
-
-
-  return (
-    <div className={`grid ${colsClass} gap-3`}>
-
-      {hits.map((hit) => (
-        <ProductCard
-          key={hit.objectID}
-          hit={hit as Record<string, unknown>}
-          cardMapping={cardMapping}
-        />
-      ))}
-    </div>
-  );
-}
-
-function SearchInput({ externalQuery }: { externalQuery: string }) {
-  const { refine } = useSearchBox();
-
-  useMemo(() => {
-    refine(externalQuery);
-  }, [externalQuery, refine]);
-
-  return null;
 }
 
 export function SearchPanel({
@@ -89,7 +28,6 @@ export function SearchPanel({
   canRemove,
 }: SearchPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [selectedCopyFromId, setSelectedCopyFromId] = useState<string>('');
   const { resolvedTheme } = useTheme();
 
   // Fallback to check document class if theme is not available
@@ -105,60 +43,30 @@ export function SearchPanel({
     return algoliasearch(panel.appId, panel.apiKey);
   }, [panel.appId, panel.apiKey]);
 
-  const getOtherPanels = () => {
-    return allPanels.filter(p => p.id !== panel.id);
-  };
-
   const handleCopySettings = (sourcePanelId: string) => {
     const sourcePanel = allPanels.find(p => p.id === sourcePanelId);
     if (!sourcePanel) return;
 
-    const confirmed = window.confirm(
-      `Copy all settings from "${sourcePanel.name}"? This will overwrite your current panel configuration (except the panel name).`
-    );
-
-    if (confirmed) {
-      onPanelChange({
-        ...panel,
-        appId: sourcePanel.appId,
-        apiKey: sourcePanel.apiKey,
-        indexName: sourcePanel.indexName,
-        queryParams: { ...sourcePanel.queryParams },
-        cardMapping: { ...sourcePanel.cardMapping },
-      });
-      setSelectedCopyFromId('');
-    }
+    onPanelChange({
+      ...panel,
+      appId: sourcePanel.appId,
+      apiKey: sourcePanel.apiKey,
+      indexName: sourcePanel.indexName,
+      queryParams: { ...sourcePanel.queryParams },
+      cardMapping: { ...sourcePanel.cardMapping },
+    });
   };
 
   const isConfigured = panel.appId && panel.apiKey && panel.indexName;
 
   return (
     <div className="flex flex-col h-full border-r bg-card">
-      <div className="sticky top-0 z-10 flex items-center justify-between px-3 py-2 border-b border-border bg-muted/90">
-        <span className="text-sm font-medium text-foreground truncate">
-          {panel.name}
-        </span>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-          {canRemove && onRemove && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onRemove}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+      <SearchPanelHeader
+        panelName={panel.name}
+        canRemove={canRemove}
+        onSettingsClick={() => setSettingsOpen(true)}
+        onRemoveClick={onRemove}
+      />
 
       <div className="flex-1 p-3 px-[10%]">
         {!isConfigured ? (
@@ -183,216 +91,20 @@ export function SearchPanel({
           >
             <Configure {...panel.queryParams}></Configure>
             <SearchInput externalQuery={query} />
-            <HitsGrid
-              cardMapping={panel.cardMapping}
-            />
+            <SearchPanelHitsGrid cardMapping={panel.cardMapping} />
           </InstantSearch>
         ) : null}
       </div>
 
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Panel Settings</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {getOtherPanels().length > 0 && (
-              <div className="border border-border rounded-md p-3 bg-muted/30">
-                <label className="text-sm font-medium mb-2 block">
-                  Copy Settings from Another Panel
-                </label>
-
-                {getOtherPanels().length === 1 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopySettings(getOtherPanels()[0].id)}
-                    className="w-full"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy from "{getOtherPanels()[0].name}"
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Select
-                      value={selectedCopyFromId}
-                      onValueChange={setSelectedCopyFromId}
-                    >
-                      <SelectTrigger className="flex-1 h-9">
-                        <SelectValue placeholder="Select a panel..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getOtherPanels().map(p => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (selectedCopyFromId) {
-                          handleCopySettings(selectedCopyFromId);
-                        }
-                      }}
-                      disabled={!selectedCopyFromId}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-
-                <p className="text-xs text-muted-foreground mt-2">
-                  This will copy all settings except the panel name
-                </p>
-              </div>
-            )}
-
-            <div>
-              <label className="text-sm font-medium">Panel Name</label>
-              <Input
-                value={panel.name}
-                onChange={(e) =>
-                  onPanelChange({ ...panel, name: e.target.value })
-                }
-                placeholder="Production"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">App ID</label>
-              <Input
-                value={panel.appId}
-                onChange={(e) =>
-                  onPanelChange({ ...panel, appId: e.target.value })
-                }
-                placeholder="Your Algolia App ID"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Search API Key</label>
-              <Input
-                value={panel.apiKey}
-                onChange={(e) =>
-                  onPanelChange({ ...panel, apiKey: e.target.value })
-                }
-                placeholder="Search-only API Key"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Index Name</label>
-              <Input
-                value={panel.indexName}
-                onChange={(e) =>
-                  onPanelChange({ ...panel, indexName: e.target.value })
-                }
-                placeholder="products"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium block">
-                Card Display
-              </label>
-
-
-              <div className="pb-3 px-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Image field</label>
-                  <Input
-                    value={panel.cardMapping.image}
-                    onChange={(e) =>
-                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, image: e.target.value } })
-                    }
-                    className="h-7 text-xs"
-                    placeholder="e.g., image_url"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Image Prefix</label>
-                  <Input
-                    value={panel.cardMapping.imagePrefix}
-                    onChange={(e) =>
-                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imagePrefix: e.target.value } })
-                    }
-                    className="h-7 text-xs"
-                    placeholder="e.g., https://..."
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Image Suffix</label>
-                  <Input
-                    value={panel.cardMapping.imageSuffix}
-                    onChange={(e) =>
-                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imageSuffix: e.target.value } })
-                    }
-                    className="h-7 text-xs"
-                    placeholder="e.g., .png, .jpg..."
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Title field</label>
-                  <Input
-                    value={panel.cardMapping.title ?? ''}
-                    onChange={(e) =>
-                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, title: e.target.value } })
-                    }
-                    className="h-7 text-xs"
-                    placeholder="e.g., name"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">
-                    Subtitle field
-                  </label>
-                  <Input
-                    value={panel.cardMapping.subtitle ?? ''}
-                    onChange={(e) =>
-                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, subtitle: e.target.value } })
-                    }
-                    className="h-7 text-xs"
-                    placeholder="e.g., brand"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">
-                    Columns
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">
-                      {panel.cardMapping.columns || 4}
-                    </span>
-                    <Slider
-                      value={[panel.cardMapping.columns || 4]}
-                      onValueChange={(value) =>
-                        onPanelChange({
-                          ...panel,
-                          cardMapping: {
-                            ...panel.cardMapping,
-                            columns: value[0]
-                          }
-                        })
-                      }
-                      min={2}
-                      max={4}
-                      step={1}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Query Parameters (JSON)
-              </label>
-              <SearchParamsEditor panel={panel} onPanelChange={onPanelChange} editorTheme={editorTheme} />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SearchPanelSettings
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        panel={panel}
+        allPanels={allPanels}
+        editorTheme={editorTheme}
+        onPanelChange={onPanelChange}
+        onCopySettings={handleCopySettings}
+      />
     </div>
   );
 }
