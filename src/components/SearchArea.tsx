@@ -23,7 +23,7 @@ export function SearchArea({
   queryToSetAndSubmit,
 }: SearchAreaProps) {
   const [localQuery, setLocalQuery] = useState(externalQuery);
-  const prevQueryToSetRef = useRef<number | null>(null);
+  const prevQueryToSetRef = useRef<number | null>(null);  
 
   const handleAddPanel = () => {
     if (panels.length < 4) {
@@ -93,9 +93,9 @@ export function SearchArea({
       </div>
 
       {/* Panels Grid */}
-      <div className="flex-1 overflow-hidden p-4">
+      <div className="flex-1 overflow-hidden">
         <div
-          className="grid h-full gap-4"
+          className="grid h-full overflow-y-auto"
           style={{
             gridTemplateColumns: `repeat(${panels.length}, minmax(0, 1fr))`,
           }}
