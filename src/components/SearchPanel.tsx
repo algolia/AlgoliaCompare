@@ -89,7 +89,6 @@ export function SearchPanel({
   canRemove,
 }: SearchPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [editPanel, setEditPanel] = useState(panel);
   const [selectedCopyFromId, setSelectedCopyFromId] = useState<string>('');
   const { resolvedTheme } = useTheme();
 
@@ -106,11 +105,6 @@ export function SearchPanel({
     return algoliasearch(panel.appId, panel.apiKey);
   }, [panel.appId, panel.apiKey]);
 
-  const handleSaveSettings = () => {
-    onPanelChange(editPanel);
-    setSettingsOpen(false);
-  };
-
   const getOtherPanels = () => {
     return allPanels.filter(p => p.id !== panel.id);
   };
@@ -124,8 +118,8 @@ export function SearchPanel({
     );
 
     if (confirmed) {
-      setEditPanel({
-        ...editPanel,
+      onPanelChange({
+        ...panel,
         appId: sourcePanel.appId,
         apiKey: sourcePanel.apiKey,
         indexName: sourcePanel.indexName,
@@ -149,10 +143,7 @@ export function SearchPanel({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => {
-              setEditPanel(panel);
-              setSettingsOpen(true);
-            }}
+            onClick={() => setSettingsOpen(true)}
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -178,10 +169,7 @@ export function SearchPanel({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setEditPanel(panel);
-                setSettingsOpen(true);
-              }}
+              onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4 mr-1" />
               Settings
@@ -267,9 +255,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">Panel Name</label>
               <Input
-                value={editPanel.name}
+                value={panel.name}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, name: e.target.value })
+                  onPanelChange({ ...panel, name: e.target.value })
                 }
                 placeholder="Production"
               />
@@ -277,9 +265,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">App ID</label>
               <Input
-                value={editPanel.appId}
+                value={panel.appId}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, appId: e.target.value })
+                  onPanelChange({ ...panel, appId: e.target.value })
                 }
                 placeholder="Your Algolia App ID"
               />
@@ -287,9 +275,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">Search API Key</label>
               <Input
-                value={editPanel.apiKey}
+                value={panel.apiKey}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, apiKey: e.target.value })
+                  onPanelChange({ ...panel, apiKey: e.target.value })
                 }
                 placeholder="Search-only API Key"
               />
@@ -297,9 +285,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">Index Name</label>
               <Input
-                value={editPanel.indexName}
+                value={panel.indexName}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, indexName: e.target.value })
+                  onPanelChange({ ...panel, indexName: e.target.value })
                 }
                 placeholder="products"
               />
@@ -314,9 +302,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image field</label>
                   <Input
-                    value={editPanel.cardMapping.image}
+                    value={panel.cardMapping.image}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, image: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, image: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., image_url"
@@ -325,9 +313,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image Prefix</label>
                   <Input
-                    value={editPanel.cardMapping.imagePrefix}
+                    value={panel.cardMapping.imagePrefix}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imagePrefix: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imagePrefix: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., https://..."
@@ -336,9 +324,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image Suffix</label>
                   <Input
-                    value={editPanel.cardMapping.imageSuffix}
+                    value={panel.cardMapping.imageSuffix}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imageSuffix: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imageSuffix: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., .png, .jpg..."
@@ -347,9 +335,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Title field</label>
                   <Input
-                    value={editPanel.cardMapping.title ?? ''}
+                    value={panel.cardMapping.title ?? ''}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, title: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, title: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., name"
@@ -360,9 +348,9 @@ export function SearchPanel({
                     Subtitle field
                   </label>
                   <Input
-                    value={editPanel.cardMapping.subtitle ?? ''}
+                    value={panel.cardMapping.subtitle ?? ''}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, subtitle: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, subtitle: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., brand"
@@ -374,17 +362,17 @@ export function SearchPanel({
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-4">
-                      {editPanel.cardMapping.columns || 4}
+                      {panel.cardMapping.columns || 4}
                     </span>
                     <Slider
-                      value={[editPanel.cardMapping.columns || 4]}
+                      value={[panel.cardMapping.columns || 4]}
                       onValueChange={(value) =>
-                        setEditPanel({ 
-                          ...editPanel, 
-                          cardMapping: { 
-                            ...editPanel.cardMapping, 
-                            columns: value[0] 
-                          } 
+                        onPanelChange({
+                          ...panel,
+                          cardMapping: {
+                            ...panel.cardMapping,
+                            columns: value[0]
+                          }
                         })
                       }
                       min={2}
@@ -400,11 +388,8 @@ export function SearchPanel({
               <label className="text-sm font-medium mb-2 block">
                 Query Parameters (JSON)
               </label>
-              <SearchParamsEditor editPanel={editPanel} setEditPanel={setEditPanel} editorTheme={editorTheme} />
+              <SearchParamsEditor panel={panel} onPanelChange={onPanelChange} editorTheme={editorTheme} />
             </div>
-            <Button onClick={handleSaveSettings} className="w-full">
-              Save Settings
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
