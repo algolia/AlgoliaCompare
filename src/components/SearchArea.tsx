@@ -104,6 +104,7 @@ export function SearchArea({
             <SearchPanel
               key={panel.id}
               panel={panel}
+              allPanels={panels}
               query={externalQuery}
               onPanelChange={(updated) => handlePanelChange(index, updated)}
               onRemove={() => handleRemovePanel(index)}

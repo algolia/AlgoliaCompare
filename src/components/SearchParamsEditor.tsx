@@ -316,15 +316,15 @@ function registerAlgoliaCompletionProvider(monaco: any) {
 // }
 
 type Props = {
-  editPanel: { queryParams: unknown };
-  setEditPanel: (value: any) => void;
+  panel: { queryParams: unknown };
+  onPanelChange: (value: any) => void;
   editorTheme?: string;
 };
 
 
 export function AlgoliaParamsEditor({
-  editPanel,
-  setEditPanel,
+  panel,
+  onPanelChange,
   editorTheme,
 }: Props) {
   const handleBeforeMount = (monaco: Monaco) => {
@@ -336,13 +336,13 @@ export function AlgoliaParamsEditor({
       <Editor
         height="200px"
         defaultLanguage="json"
-        value={JSON.stringify(editPanel.queryParams, null, 2)}
+        value={JSON.stringify(panel.queryParams, null, 2)}
         beforeMount={handleBeforeMount}
         onChange={(value) => {
           if (value !== undefined) {
             try {
               const parsed = JSON.parse(value);
-              setEditPanel({ ...editPanel, queryParams: parsed });
+              onPanelChange({ ...panel, queryParams: parsed });
             } catch {
               // Invalid JSON - keep the text but don't update queryParams
             }

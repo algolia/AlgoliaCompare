@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Configure, InstantSearch, useHits, useSearchBox } from 'react-instantsearch';
-import { Settings, X } from 'lucide-react';
+import { Settings, X, Copy } from 'lucide-react';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { useTheme } from 'next-themes';
 import SearchParamsEditor from './SearchParamsEditor';
@@ -13,11 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ProductCard } from './ProductCard';
 import { SearchPanel as SearchPanelType, CardMapping } from '@/types/config';
 
 interface SearchPanelProps {
   panel: SearchPanelType;
+  allPanels: SearchPanelType[];
   query: string;
   onPanelChange: (panel: SearchPanelType) => void;
   onRemove?: () => void;
@@ -74,13 +82,14 @@ function SearchInput({ externalQuery }: { externalQuery: string }) {
 
 export function SearchPanel({
   panel,
+  allPanels,
   query,
   onPanelChange,
   onRemove,
   canRemove,
 }: SearchPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [editPanel, setEditPanel] = useState(panel);
+  const [selectedCopyFromId, setSelectedCopyFromId] = useState<string>('');
   const { resolvedTheme } = useTheme();
 
   // Fallback to check document class if theme is not available
@@ -96,9 +105,29 @@ export function SearchPanel({
     return algoliasearch(panel.appId, panel.apiKey);
   }, [panel.appId, panel.apiKey]);
 
-  const handleSaveSettings = () => {
-    onPanelChange(editPanel);
-    setSettingsOpen(false);
+  const getOtherPanels = () => {
+    return allPanels.filter(p => p.id !== panel.id);
+  };
+
+  const handleCopySettings = (sourcePanelId: string) => {
+    const sourcePanel = allPanels.find(p => p.id === sourcePanelId);
+    if (!sourcePanel) return;
+
+    const confirmed = window.confirm(
+      `Copy all settings from "${sourcePanel.name}"? This will overwrite your current panel configuration (except the panel name).`
+    );
+
+    if (confirmed) {
+      onPanelChange({
+        ...panel,
+        appId: sourcePanel.appId,
+        apiKey: sourcePanel.apiKey,
+        indexName: sourcePanel.indexName,
+        queryParams: { ...sourcePanel.queryParams },
+        cardMapping: { ...sourcePanel.cardMapping },
+      });
+      setSelectedCopyFromId('');
+    }
   };
 
   const isConfigured = panel.appId && panel.apiKey && panel.indexName;
@@ -114,10 +143,7 @@ export function SearchPanel({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => {
-              setEditPanel(panel);
-              setSettingsOpen(true);
-            }}
+            onClick={() => setSettingsOpen(true)}
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -143,10 +169,7 @@ export function SearchPanel({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setEditPanel(panel);
-                setSettingsOpen(true);
-              }}
+              onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4 mr-1" />
               Settings
@@ -173,12 +196,68 @@ export function SearchPanel({
             <DialogTitle>Panel Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {getOtherPanels().length > 0 && (
+              <div className="border border-border rounded-md p-3 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">
+                  Copy Settings from Another Panel
+                </label>
+
+                {getOtherPanels().length === 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopySettings(getOtherPanels()[0].id)}
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy from "{getOtherPanels()[0].name}"
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Select
+                      value={selectedCopyFromId}
+                      onValueChange={setSelectedCopyFromId}
+                    >
+                      <SelectTrigger className="flex-1 h-9">
+                        <SelectValue placeholder="Select a panel..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getOtherPanels().map(p => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedCopyFromId) {
+                          handleCopySettings(selectedCopyFromId);
+                        }
+                      }}
+                      disabled={!selectedCopyFromId}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  This will copy all settings except the panel name
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium">Panel Name</label>
               <Input
-                value={editPanel.name}
+                value={panel.name}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, name: e.target.value })
+                  onPanelChange({ ...panel, name: e.target.value })
                 }
                 placeholder="Production"
               />
@@ -186,9 +265,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">App ID</label>
               <Input
-                value={editPanel.appId}
+                value={panel.appId}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, appId: e.target.value })
+                  onPanelChange({ ...panel, appId: e.target.value })
                 }
                 placeholder="Your Algolia App ID"
               />
@@ -196,9 +275,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">Search API Key</label>
               <Input
-                value={editPanel.apiKey}
+                value={panel.apiKey}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, apiKey: e.target.value })
+                  onPanelChange({ ...panel, apiKey: e.target.value })
                 }
                 placeholder="Search-only API Key"
               />
@@ -206,9 +285,9 @@ export function SearchPanel({
             <div>
               <label className="text-sm font-medium">Index Name</label>
               <Input
-                value={editPanel.indexName}
+                value={panel.indexName}
                 onChange={(e) =>
-                  setEditPanel({ ...editPanel, indexName: e.target.value })
+                  onPanelChange({ ...panel, indexName: e.target.value })
                 }
                 placeholder="products"
               />
@@ -223,9 +302,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image field</label>
                   <Input
-                    value={editPanel.cardMapping.image}
+                    value={panel.cardMapping.image}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, image: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, image: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., image_url"
@@ -234,9 +313,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image Prefix</label>
                   <Input
-                    value={editPanel.cardMapping.imagePrefix}
+                    value={panel.cardMapping.imagePrefix}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imagePrefix: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imagePrefix: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., https://..."
@@ -245,9 +324,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Image Suffix</label>
                   <Input
-                    value={editPanel.cardMapping.imageSuffix}
+                    value={panel.cardMapping.imageSuffix}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, imageSuffix: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, imageSuffix: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., .png, .jpg..."
@@ -256,9 +335,9 @@ export function SearchPanel({
                 <div>
                   <label className="text-xs text-muted-foreground">Title field</label>
                   <Input
-                    value={editPanel.cardMapping.title ?? ''}
+                    value={panel.cardMapping.title ?? ''}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, title: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, title: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., name"
@@ -269,9 +348,9 @@ export function SearchPanel({
                     Subtitle field
                   </label>
                   <Input
-                    value={editPanel.cardMapping.subtitle ?? ''}
+                    value={panel.cardMapping.subtitle ?? ''}
                     onChange={(e) =>
-                      setEditPanel({ ...editPanel, cardMapping: { ...editPanel.cardMapping, subtitle: e.target.value } })
+                      onPanelChange({ ...panel, cardMapping: { ...panel.cardMapping, subtitle: e.target.value } })
                     }
                     className="h-7 text-xs"
                     placeholder="e.g., brand"
@@ -283,17 +362,17 @@ export function SearchPanel({
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-4">
-                      {editPanel.cardMapping.columns || 4}
+                      {panel.cardMapping.columns || 4}
                     </span>
                     <Slider
-                      value={[editPanel.cardMapping.columns || 4]}
+                      value={[panel.cardMapping.columns || 4]}
                       onValueChange={(value) =>
-                        setEditPanel({ 
-                          ...editPanel, 
-                          cardMapping: { 
-                            ...editPanel.cardMapping, 
-                            columns: value[0] 
-                          } 
+                        onPanelChange({
+                          ...panel,
+                          cardMapping: {
+                            ...panel.cardMapping,
+                            columns: value[0]
+                          }
                         })
                       }
                       min={2}
@@ -309,11 +388,8 @@ export function SearchPanel({
               <label className="text-sm font-medium mb-2 block">
                 Query Parameters (JSON)
               </label>
-              <SearchParamsEditor editPanel={editPanel} setEditPanel={setEditPanel} editorTheme={editorTheme} />
+              <SearchParamsEditor panel={panel} onPanelChange={onPanelChange} editorTheme={editorTheme} />
             </div>
-            <Button onClick={handleSaveSettings} className="w-full">
-              Save Settings
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
