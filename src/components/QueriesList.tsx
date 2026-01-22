@@ -86,7 +86,7 @@ export function QueriesList({
             ) : (
               <>
                 <button
-                  className="flex-1 text-left px-3 py-2 text-sm truncate"
+                  className="flex-1 min-w-0 text-left px-3 py-2 text-sm whitespace-normal break-words leading-snug"
                   onClick={() => onQuerySelect(query)}
                 >
                   {query}

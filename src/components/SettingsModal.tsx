@@ -210,7 +210,7 @@ export function SettingsModal({
               <label className="text-sm font-semibold text-foreground">
                 Configurations
               </label>
-              <Button variant="outline" size="sm" onClick={onAddConfig} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => onAddConfig()} className="gap-1.5">
                 <Plus className="h-4 w-4" />
                 Add Configuration
               </Button>

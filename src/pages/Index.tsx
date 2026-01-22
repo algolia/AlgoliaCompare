@@ -50,7 +50,7 @@ const Index = () => {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane - Queries */}
-        <div className="w-48 shrink-0">
+        <div className="w-96 shrink-0">
           <QueriesList
             queries={activeConfig?.queries || []}
             currentSearchInput={currentSearchInput}
